@@ -205,7 +205,7 @@ expression:
       expression PLUS expression
       {
           if(strcmp($1.type, $3.type) != 0)
-              printf("Erreur semantique : incompatibilite de type\n");
+              printf("Erreur Sémantique : ligne %d , colonne %d , incompatibilite de type\n", ligne, colonne);
 
           char *t = newTemp();
           ajouter_quad("+", $1.nom, $3.nom, t);
@@ -216,7 +216,7 @@ expression:
     | expression MOINS expression
       {
           if(strcmp($1.type, $3.type) != 0)
-              printf("Erreur semantique : incompatibilite de type\n");
+              printf("Erreur Sémantique : ligne %d , colonne %d , incompatibilite de type\n", ligne, colonne);
 
           char *t = newTemp();
           ajouter_quad("-", $1.nom, $3.nom, t);
@@ -227,7 +227,7 @@ expression:
     | expression MUL expression
       {
           if(strcmp($1.type, $3.type) != 0)
-              printf("Erreur semantique : incompatibilite de type\n");
+              printf("Erreur Sémantique : ligne %d , colonne %d , incompatibilite de type\n", ligne, colonne);
 
           char *t = newTemp();
           ajouter_quad("*", $1.nom, $3.nom, t);
@@ -247,6 +247,11 @@ expression:
         strcpy($$.nom, t);
         strcpy($$.type, $1.type);
     }
+}
+| PO expression PF
+{
+    strcpy($$.nom, $2.nom);
+    strcpy($$.type, $2.type);
 }
     | IDF
 {
@@ -280,18 +285,47 @@ expression:
 
 condition_logique:
       expression GT expression
+      {
+          if(strcmp($1.type, $3.type) != 0)
+              printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
+      }
     | expression LT expression
+      {
+          if(strcmp($1.type, $3.type) != 0)
+              printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
+      }
     | expression GE expression
+      {
+          if(strcmp($1.type, $3.type) != 0)
+              printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
+      }
     | expression LE expression
+      {
+          if(strcmp($1.type, $3.type) != 0)
+              printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
+      }
     | expression EQ expression
+      {
+          if(strcmp($1.type, $3.type) != 0)
+              printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
+      }
     | expression NE expression
+      {
+          if(strcmp($1.type, $3.type) != 0)
+              printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
+      }
 ;
 
 %%
 
 void yyerror(char *s)
 {
-    printf("Erreur Syntaxique : ligne %d , colonne %d , élément %s\n", ligne, colonne, yytext);
+    if(strcmp(yytext, ")") == 0)
+        printf("Erreur Syntaxique : parenthese fermante sans ouvrante ligne %d colonne %d\n", ligne, colonne);
+    else if(strcmp(yytext, "(") == 0)
+        printf("Erreur Syntaxique : parenthese ouvrante sans fermante ligne %d colonne %d\n", ligne, colonne);
+    else
+        printf("Erreur Syntaxique : ligne %d , colonne %d , élément %s\n", ligne, colonne, yytext);
 }
 
 int main()

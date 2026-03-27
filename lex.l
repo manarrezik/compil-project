@@ -18,9 +18,8 @@ chiffre     [0-9]
 idf         {lettre}({lettre}|{chiffre}|_){0,7}
 entier      {chiffre}+
 reel        {chiffre}+"."{chiffre}+
-signeEnt    \([+-]?{chiffre}+\)
-signeReel   \([+-]?{chiffre}+"."{chiffre}+\)
-
+signeEnt    \([+-]{chiffre}+\)
+signeReel   \([+-]{chiffre}+"."{chiffre}+\)
 %%
 
 "PROGRAM"      { colonne += yyleng; return PROGRAM; }
@@ -77,6 +76,9 @@ signeReel   \([+-]?{chiffre}+"."{chiffre}+\)
     return ENTIER;
 }
 
+[+-]{chiffre}+ {
+    printf("Erreur Lexicale : ligne %d , colonne %d , nombre signe doit etre entre parentheses %s\n", ligne, colonne, yytext);
+}
 {reel} {
     yylval.reel = atof(yytext);
     colonne += yyleng;
