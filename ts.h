@@ -7,12 +7,12 @@ typedef struct symbole
     char type[10];
     float valeur;
     int taille;
+    float *tabValeurs;   
     struct symbole *suivant;
 } symbole;
 
 void inserer(char *nom, char *type);
 symbole* rechercher(char *nom);
 void afficher_ts();
-char* getType(char *nom);
 
 #endif

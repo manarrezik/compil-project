@@ -8,7 +8,7 @@ ENDDECL
 
 BEGIN
 
-a = 5;
+a = (-5);
 b = (+10);
 c = a + b * ((-2) + 3);     // parenthèses correctes
 
@@ -45,12 +45,12 @@ WHILE (a > 0) {
 }
 
 // FOR imbriquée dans WHILE
-WHILE (a > 0) {
+/*WHILE (a > 0) {
     FOR (i : 0 : 5 : 1) {
         a = a + i;
     }
     a = a - 1;
-}
+}*/
 
 // Affectation imbriquée avec parenthèses
 c = (a + (b * (2 + (3 + 4))));

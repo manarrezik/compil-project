@@ -31,9 +31,7 @@ symbole* rechercher(char *nom)
 
 void inserer(char *nom, char *type)
 {
-    symbole *s = rechercher(nom);
-
-    if(s != NULL)
+    if(rechercher(nom) != NULL)
     {
         printf("Erreur semantique : double declaration %s\n", nom);
         return;
@@ -46,6 +44,8 @@ void inserer(char *nom, char *type)
     strcpy(new->type, type);
     new->valeur = 0;
     new->taille = 0;
+    new->tabValeurs = NULL;
+
     new->suivant = table[h];
     table[h] = new;
 }
@@ -62,16 +62,17 @@ void afficher_ts()
         s = table[i];
         while(s)
         {
-            printf("Nom: %s | Type: %s | Valeur: %.2f\n", s->nom, s->type, s->valeur);
+            if(s->taille > 0)
+            {
+                printf("Nom: %s | Type: Tableau de %s | Taille: %d\n",
+                       s->nom, s->type, s->taille);
+            }
+            else
+            {
+                printf("Nom: %s | Type: %s | Valeur: %.2f\n",
+                       s->nom, s->type, s->valeur);
+            }
             s = s->suivant;
         }
     }
-}
-char* getType(char *nom)
-{
-    symbole *s = rechercher(nom);
-    if(s == NULL)
-        return "";
-
-    return s->type;
 }

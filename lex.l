@@ -65,13 +65,21 @@ signeReel   \([+-]{chiffre}+"."{chiffre}+\)
 "]"            { colonne += yyleng; return CF; }
 
 {signeReel} {
-    yylval.reel = atof(yytext);
+    char temp[20];
+    strncpy(temp, yytext + 1, yyleng - 2);
+    temp[yyleng - 2] = '\0';
+
+    yylval.reel = atof(temp);
     colonne += yyleng;
     return REEL;
 }
 
 {signeEnt} {
-    yylval.entier = atoi(yytext);
+    char temp[20];
+    strncpy(temp, yytext + 1, yyleng - 2); // enlever '(' et ')'
+    temp[yyleng - 2] = '\0';
+
+    yylval.entier = atoi(temp);
     colonne += yyleng;
     return ENTIER;
 }

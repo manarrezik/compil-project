@@ -45,6 +45,7 @@ int yylex();
 %type <expr> expression
 %type <str> type
 %type <str> liste_idf
+%type <reel> valeur
 
 %left OR
 %left AND
@@ -70,9 +71,15 @@ declaration:
       }
       liste_idf PV
     | CONST IDF AFF valeur PV
-      {
-          inserer($2, "CONST");
-      }
+{
+    inserer($2, "CONST");
+
+    symbole *s = rechercher($2);
+    if(s != NULL)
+    {
+        s->valeur = $4; // ✔ correction finale
+    }
+}
 ;
 
 type:
@@ -103,6 +110,7 @@ liste_idf:
                   printf("Erreur Sémantique : ligne %d , colonne %d , élément %s (taille tableau invalide)\n", ligne, colonne, $1);
               else
                   s->taille = $3;
+                  s->tabValeurs = malloc(sizeof(float) * $3);
           }
       }
 
@@ -128,13 +136,14 @@ liste_idf:
                   printf("Erreur Sémantique : ligne %d , colonne %d , élément %s (taille tableau invalide)\n", ligne, colonne, $3);
               else
                   s->taille = $5;
+                  s->tabValeurs = malloc(sizeof(float) * $5);
           }
       }
 ;
 
 valeur:
-      ENTIER
-    | REEL
+      ENTIER { $$ = $1; }
+    | REEL   { $$ = $1; }
 ;
 
 instructions:
@@ -158,10 +167,21 @@ affectation:
 
           if(s == NULL)
               printf("Erreur Sémantique : ligne %d , colonne %d , élément %s (variable non declaree)\n", ligne, colonne, $1);
+
+          else if(strcmp(s->type, "CONST") == 0)
+              printf("Erreur Sémantique : ligne %d , colonne %d , modification d'une constante %s\n", ligne, colonne, $1);
+
           else if(strcmp(s->type, $3.type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , élément %s (incompatibilite de type)\n", ligne, colonne, $1);
+
           else
+          {
               ajouter_quad("=", $3.nom, "", $1);
+              if(strcmp($3.type, "INTEGER") == 0)
+                  s->valeur = atoi($3.nom);
+              else
+                  s->valeur = atof($3.nom);
+          }
       }
 
     | IDF CO ENTIER CF AFF expression PV
@@ -170,14 +190,28 @@ affectation:
 
           if(s == NULL)
               printf("Erreur Sémantique : ligne %d , colonne %d , élément %s (tableau non declare)\n", ligne, colonne, $1);
+
           else if(s->taille == 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , élément %s (n'est pas un tableau)\n", ligne, colonne, $1);
+
           else if($3 < 0 || $3 >= s->taille)
               printf("Erreur Sémantique : ligne %d , colonne %d , élément %s (depassement tableau)\n", ligne, colonne, $1);
+
+          else if(strcmp(s->type, "CONST") == 0)
+              printf("Erreur Sémantique : ligne %d , colonne %d , modification d'une constante %s\n", ligne, colonne, $1);
+
           else if(strcmp(s->type, $6.type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , élément %s (type tableau invalide)\n", ligne, colonne, $1);
+
           else
+          {
               ajouter_quad("=[]", $1, $6.nom, "TAB");
+
+              if(strcmp($6.type, "INTEGER") == 0)
+                  s->tabValeurs[$3] = atoi($6.nom);
+              else
+                  s->tabValeurs[$3] = atof($6.nom);
+          }
       }
 ;
 condition:

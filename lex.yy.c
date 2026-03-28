@@ -990,30 +990,38 @@ case 37:
 YY_RULE_SETUP
 #line 67 "lex.l"
 {
-    yylval.reel = atof(yytext);
+    char temp[20];
+    strncpy(temp, yytext + 1, yyleng - 2);
+    temp[yyleng - 2] = '\0';
+
+    yylval.reel = atof(temp);
     colonne += yyleng;
     return REEL;
 }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 73 "lex.l"
+#line 77 "lex.l"
 {
-    yylval.entier = atoi(yytext);
+    char temp[20];
+    strncpy(temp, yytext + 1, yyleng - 2); // enlever '(' et ')'
+    temp[yyleng - 2] = '\0';
+
+    yylval.entier = atoi(temp);
     colonne += yyleng;
     return ENTIER;
 }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 79 "lex.l"
+#line 87 "lex.l"
 {
     printf("Erreur Lexicale : ligne %d , colonne %d , nombre signe doit etre entre parentheses %s\n", ligne, colonne, yytext);
 }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 82 "lex.l"
+#line 90 "lex.l"
 {
     yylval.reel = atof(yytext);
     colonne += yyleng;
@@ -1022,7 +1030,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 88 "lex.l"
+#line 96 "lex.l"
 {
     yylval.entier = atoi(yytext);
     colonne += yyleng;
@@ -1031,14 +1039,14 @@ YY_RULE_SETUP
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 93 "lex.l"
+#line 101 "lex.l"
 {
     printf("Erreur Lexicale : ligne %d , colonne %d , identificateur trop long %s\n", ligne, colonne, yytext);
 }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 96 "lex.l"
+#line 104 "lex.l"
 {
     yylval.str = strdup(yytext);
     colonne += yyleng;
@@ -1047,37 +1055,37 @@ YY_RULE_SETUP
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 102 "lex.l"
+#line 110 "lex.l"
 { colonne += yyleng; }
 	YY_BREAK
 case 45:
 /* rule 45 can match eol */
 YY_RULE_SETUP
-#line 103 "lex.l"
+#line 111 "lex.l"
 { ligne++; colonne = 1; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 105 "lex.l"
+#line 113 "lex.l"
 ;
 	YY_BREAK
 case 47:
 /* rule 47 can match eol */
 YY_RULE_SETUP
-#line 106 "lex.l"
+#line 114 "lex.l"
 ;
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 108 "lex.l"
+#line 116 "lex.l"
 { erreur_lexicale(); colonne += yyleng; }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 110 "lex.l"
+#line 118 "lex.l"
 ECHO;
 	YY_BREAK
-#line 1081 "lex.yy.c"
+#line 1089 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2082,7 +2090,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 110 "lex.l"
+#line 118 "lex.l"
 
 
 int yywrap() { return 1; }
