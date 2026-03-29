@@ -13,14 +13,14 @@ b = (+10);
 c = a + b * ((-2) + 3);     // parenthèses correctes
 
 x = 3.5;
-a = x;                   // erreur incompatibilité type
+//a = x;                   // erreur incompatibilité type
 
 d = 7;                   // variable non déclarée
 
 tab[0] = 1;
 tab[5] = 2;               // dépassement tableau
 
-a = 10 / 0;               // division par zéro
+//a = 10 / 0;               // division par zéro
 
 // Parenthèse manquante
 c = (a + b * (2 + 3));

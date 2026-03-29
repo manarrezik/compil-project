@@ -7,6 +7,7 @@
 extern int ligne;
 extern int colonne;
 extern char* yytext; 
+extern int qc;
 
 int temp = 1;
 char tmp[20];
@@ -25,9 +26,10 @@ int yylex();
     float reel;
     char* str;
     struct {
-        char nom[20];
-        char type[10];
-    } expr;
+    char nom[20];
+    char type[10];
+    float val;  
+} expr;
 }
 
 %token PROGRAM DECL ENDDECL BEGIN_ END_
@@ -46,6 +48,10 @@ int yylex();
 %type <str> type
 %type <str> liste_idf
 %type <reel> valeur
+%type <expr> condition_logique
+%type <entier> condition
+%type <entier> boucle_for
+%type <entier> boucle_while
 
 %left OR
 %left AND
@@ -82,10 +88,9 @@ declaration:
 }
 ;
 
-type:
-      INTEGER { $$ = "INTEGER"; }
-    | FLOAT   { $$ = "FLOAT"; }
-;
+type: 
+    INTEGER {$$ = "INTEGER"; } 
+    | FLOAT { $$ = "FLOAT"; } ;
 
 liste_idf:
       IDF
@@ -178,9 +183,9 @@ affectation:
           {
               ajouter_quad("=", $3.nom, "", $1);
               if(strcmp($3.type, "INTEGER") == 0)
-                  s->valeur = atoi($3.nom);
+                  s->valeur = $3.val;
               else
-                  s->valeur = atof($3.nom);
+                  s->valeur = $3.val;
           }
       }
 
@@ -208,30 +213,115 @@ affectation:
               ajouter_quad("=[]", $1, $6.nom, "TAB");
 
               if(strcmp($6.type, "INTEGER") == 0)
-                  s->tabValeurs[$3] = atoi($6.nom);
+                  s->tabValeurs[$3] = $6.val;
               else
                   s->tabValeurs[$3] = atof($6.nom);
           }
       }
 ;
 condition:
-    IF PO condition_logique PF AO instructions AF
+    IF PO condition_logique PF
+    {
+        char tmp[20];
+        sprintf(tmp, "%d", -1);
+        ajouter_quad("BZ", $3.nom, "", tmp);
+
+        $<entier>$ = qc - 1; // position BZ
+    }
+    AO instructions AF
+    {
+        char tmp2[20];
+        sprintf(tmp2, "%d", -1);
+        ajouter_quad("BR", "", "", tmp2);
+
+        int saut = qc - 1;
+
+        char finif[20];
+        sprintf(finif, "%d", qc);
+        maj_quad($<entier>5, finif);
+
+        $<entier>$ = saut;
+    }
     ELSE AO instructions AF
+    {
+        char fin[20];
+        sprintf(fin, "%d", qc);
+        maj_quad($<entier>9, fin);
+    }
 ;
 
 boucle_for:
-    FOR PO IDF DP ENTIER DP ENTIER DP ENTIER PF AO instructions AF
+    FOR PO IDF DP ENTIER DP ENTIER DP ENTIER PF
+    {
+        symbole *s = rechercher($3);
+        if(s) s->valeur = $5;
+
+        int debut = qc;
+
+        char finv[20];
+        sprintf(finv, "%d", $7);
+
+        char *t = newTemp();
+        ajouter_quad("<=", $3, finv, t);
+
+        char tmp[20];
+        sprintf(tmp, "%d", -1);
+        ajouter_quad("BZ", t, "", tmp);
+
+        $<entier>$ = qc - 1;
+        $<entier>2 = debut;
+    }
+    AO instructions AF
+    {
+        char step[20];
+        sprintf(step, "%d", $9);
+
+        char *t = newTemp();
+        ajouter_quad("+", $3, step, t);
+        ajouter_quad("=", t, "", $3);
+
+        char retour[20];
+        sprintf(retour, "%d", $<entier>2);
+        ajouter_quad("BR", "", "", retour);
+
+        char fin[20];
+        sprintf(fin, "%d", qc);
+        maj_quad($<entier>11, fin);
+    }
 ;
 
 boucle_while:
-    WHILE PO condition_logique PF AO instructions AF
+    WHILE PO
+    {
+        $<entier>$ = qc;
+    }
+    condition_logique PF
+    {
+        char tmp[20];
+        sprintf(tmp, "%d", -1);
+        ajouter_quad("BZ", $4.nom, "", tmp);
+
+        $<entier>$ = qc - 1;
+    }
+    AO instructions AF
+    {
+        char retour[20];
+        sprintf(retour, "%d", $<entier>3);
+        ajouter_quad("BR", "", "", retour);
+
+        char fin[20];
+        sprintf(fin, "%d", qc);
+        maj_quad($<entier>6, fin);
+    }
 ;
 
 ecriture:
     WRITE PO IDF PF PV
     {
         if(rechercher($3) == NULL)
-            printf("Erreur Sémantique : ligne %d , colonne %d , élément %s (variable non declaree)\n", ligne, colonne, $3);
+            printf("Erreur Sémantique : ligne %d , colonne %d , variable non declaree\n", ligne, colonne);
+        else
+            ajouter_quad("WRITE", $3, "", "");
     }
 ;
 
@@ -246,6 +336,7 @@ expression:
 
           strcpy($$.nom, t);
           strcpy($$.type, $1.type);
+          $$.val=$1.val + $3.val;
       }
     | expression MOINS expression
       {
@@ -257,6 +348,7 @@ expression:
 
           strcpy($$.nom, t);
           strcpy($$.type, $1.type);
+          $$.val=$1.val - $3.val;
       }
     | expression MUL expression
       {
@@ -268,24 +360,35 @@ expression:
 
           strcpy($$.nom, t);
           strcpy($$.type, $1.type);
+          $$.val=$1.val * $3.val;
       }
     | expression DIV expression
 {
-    if(strcmp($3.nom, "0") == 0)
+    if($3.val == 0)
+    {
         printf("Erreur Sémantique : ligne %d , colonne %d , division par zero\n", ligne, colonne);
+
+        strcpy($$.nom, "0");   // IMPORTANT
+        strcpy($$.type, $1.type);
+        $$.val = 0;
+    }
     else if(strcmp($1.type, $3.type) != 0)
-        printf("Erreur Sémantique : ligne %d , colonne %d , incompatibilite de type\n", ligne, colonne);
+    {
+        printf("Erreur Sémantique : incompatibilite de type\n");
+    }
     else {
         char *t = newTemp();
         ajouter_quad("/", $1.nom, $3.nom, t);
         strcpy($$.nom, t);
         strcpy($$.type, $1.type);
+        $$.val=$1.val / $3.val;
     }
 }
 | PO expression PF
 {
     strcpy($$.nom, $2.nom);
     strcpy($$.type, $2.type);
+    $$.val=$2.val;
 }
     | IDF
 {
@@ -295,6 +398,7 @@ expression:
     else {
         strcpy($$.nom, $1);
         strcpy($$.type, s->type);
+        $$.val= s->valeur;
     }
 }
     | ENTIER
@@ -306,6 +410,7 @@ expression:
     sprintf(buffer, "%d", $1);
     strcpy($$.nom, buffer);
     strcpy($$.type, "INTEGER");
+    $$.val=$1;
 }
     | REEL
       {
@@ -314,40 +419,78 @@ expression:
 
           strcpy($$.nom, buffer);
           strcpy($$.type, "FLOAT");
+          $$.val=$1;
       }
 ;
 
 condition_logique:
       expression GT expression
-      {
-          if(strcmp($1.type, $3.type) != 0)
+{   if(strcmp($1.type, $3.type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
-      }
-    | expression LT expression
-      {
-          if(strcmp($1.type, $3.type) != 0)
+
+
+    char *t = newTemp();
+    ajouter_quad(">", $1.nom, $3.nom, t);
+
+    strcpy($$.nom, t);
+    strcpy($$.type, "INTEGER");
+    $$.val = ($1.val > $3.val);
+}
+| expression LT expression
+{   if(strcmp($1.type, $3.type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
-      }
-    | expression GE expression
-      {
-          if(strcmp($1.type, $3.type) != 0)
+
+    char *t = newTemp();
+    ajouter_quad("<", $1.nom, $3.nom, t);
+
+    strcpy($$.nom, t);
+    strcpy($$.type, "INTEGER");
+    $$.val = ($1.val < $3.val);
+}
+| expression GE expression
+{   if(strcmp($1.type, $3.type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
-      }
-    | expression LE expression
-      {
-          if(strcmp($1.type, $3.type) != 0)
+
+    char *t = newTemp();
+    ajouter_quad(">=", $1.nom, $3.nom, t);
+
+    strcpy($$.nom, t);
+    strcpy($$.type, "INTEGER");
+    $$.val = ($1.val >= $3.val);
+}
+| expression LE expression
+{   if(strcmp($1.type, $3.type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
-      }
-    | expression EQ expression
-      {
-          if(strcmp($1.type, $3.type) != 0)
+
+    char *t = newTemp();
+    ajouter_quad("<=", $1.nom, $3.nom, t);
+
+    strcpy($$.nom, t);
+    strcpy($$.type, "INTEGER");
+    $$.val = ($1.val <= $3.val);
+}
+| expression EQ expression
+{   if(strcmp($1.type, $3.type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
-      }
-    | expression NE expression
-      {
-          if(strcmp($1.type, $3.type) != 0)
+
+    char *t = newTemp();
+    ajouter_quad("==", $1.nom, $3.nom, t);
+
+    strcpy($$.nom, t);
+    strcpy($$.type, "INTEGER");
+    $$.val = ($1.val == $3.val);
+}
+| expression NE expression
+{   if(strcmp($1.type, $3.type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
-      }
+
+    char *t = newTemp();
+    ajouter_quad("!=", $1.nom, $3.nom, t);
+
+    strcpy($$.nom, t);
+    strcpy($$.type, "INTEGER");
+    $$.val = ($1.val != $3.val);
+}
 ;
 
 %%
@@ -365,6 +508,7 @@ void yyerror(char *s)
 int main()
 {
     yyparse();
+    executer_quads();
     afficher_ts();
     afficher_quad();
     return 0;
