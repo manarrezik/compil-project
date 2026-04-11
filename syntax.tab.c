@@ -573,9 +573,9 @@ static const yytype_int16 yyrline[] =
 {
        0,    66,    66,    70,    71,    75,    74,    79,    92,    93,
       96,   105,   122,   131,   150,   151,   155,   156,   160,   161,
-     162,   163,   164,   169,   192,   224,   232,   223,   255,   254,
-     295,   299,   294,   319,   329,   341,   353,   365,   387,   393,
-     404,   415,   427,   439,   450,   461,   472,   483
+     162,   163,   164,   169,   192,   227,   235,   226,   258,   257,
+     298,   302,   297,   322,   332,   344,   356,   368,   390,   396,
+     407,   418,   430,   442,   453,   464,   475,   486
 };
 #endif
 
@@ -1225,7 +1225,7 @@ yyreduce:
     symbole *s = rechercher((yyvsp[-3].str));
     if(s != NULL)
     {
-        s->valeur = (yyvsp[-1].reel); // ✔ correction finale
+        s->valeur = (yyvsp[-1].reel); 
     }
 }
 #line 1232 "syntax.tab.c"
@@ -1365,21 +1365,21 @@ yyreduce:
           else if(strcmp(s->type, (yyvsp[-1].expr).type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , élément %s (type tableau invalide)\n", ligne, colonne, (yyvsp[-6].str));
 
-          else
+         else
           {
-              ajouter_quad("=[]", (yyvsp[-6].str), (yyvsp[-1].expr).nom, "TAB");
+              char index[20];
+              sprintf(index, "%d", (yyvsp[-4].entier));
 
-              if(strcmp((yyvsp[-1].expr).type, "INTEGER") == 0)
-                  s->tabValeurs[(yyvsp[-4].entier)] = (yyvsp[-1].expr).val;
-              else
-                  s->tabValeurs[(yyvsp[-4].entier)] = atof((yyvsp[-1].expr).nom);
+              ajouter_quad("=[]", (yyvsp[-6].str), index, (yyvsp[-1].expr).nom);
+
+              s->tabValeurs[(yyvsp[-4].entier)] = (yyvsp[-1].expr).val;
           }
       }
 #line 1379 "syntax.tab.c"
     break;
 
   case 25: /* @2: %empty  */
-#line 224 "syntax.y"
+#line 227 "syntax.y"
     {
         char tmp[20];
         sprintf(tmp, "%d", -1);
@@ -1391,7 +1391,7 @@ yyreduce:
     break;
 
   case 26: /* @3: %empty  */
-#line 232 "syntax.y"
+#line 235 "syntax.y"
     {
         char tmp2[20];
         sprintf(tmp2, "%d", -1);
@@ -1409,7 +1409,7 @@ yyreduce:
     break;
 
   case 27: /* condition: IF PO condition_logique PF @2 AO instructions AF @3 ELSE AO instructions AF  */
-#line 246 "syntax.y"
+#line 249 "syntax.y"
     {
         char fin[20];
         sprintf(fin, "%d", qc);
@@ -1419,7 +1419,7 @@ yyreduce:
     break;
 
   case 28: /* @4: %empty  */
-#line 255 "syntax.y"
+#line 258 "syntax.y"
     {
         symbole *s = rechercher((yyvsp[-7].str));
         if(s) s->valeur = (yyvsp[-5].entier);
@@ -1443,7 +1443,7 @@ yyreduce:
     break;
 
   case 29: /* boucle_for: FOR PO IDF DP ENTIER DP ENTIER DP ENTIER PF @4 AO instructions AF  */
-#line 275 "syntax.y"
+#line 278 "syntax.y"
     {
         char step[20];
         sprintf(step, "%d", (yyvsp[-5].entier));
@@ -1464,7 +1464,7 @@ yyreduce:
     break;
 
   case 30: /* @5: %empty  */
-#line 295 "syntax.y"
+#line 298 "syntax.y"
     {
         (yyval.entier) = qc;
     }
@@ -1472,7 +1472,7 @@ yyreduce:
     break;
 
   case 31: /* @6: %empty  */
-#line 299 "syntax.y"
+#line 302 "syntax.y"
     {
         char tmp[20];
         sprintf(tmp, "%d", -1);
@@ -1484,7 +1484,7 @@ yyreduce:
     break;
 
   case 32: /* boucle_while: WHILE PO @5 condition_logique PF @6 AO instructions AF  */
-#line 307 "syntax.y"
+#line 310 "syntax.y"
     {
         char retour[20];
         sprintf(retour, "%d", (yyvsp[-6].entier));
@@ -1498,7 +1498,7 @@ yyreduce:
     break;
 
   case 33: /* ecriture: WRITE PO IDF PF PV  */
-#line 320 "syntax.y"
+#line 323 "syntax.y"
     {
         if(rechercher((yyvsp[-2].str)) == NULL)
             printf("Erreur Sémantique : ligne %d , colonne %d , variable non declaree\n", ligne, colonne);
@@ -1509,7 +1509,7 @@ yyreduce:
     break;
 
   case 34: /* expression: expression PLUS expression  */
-#line 330 "syntax.y"
+#line 333 "syntax.y"
       {
           if(strcmp((yyvsp[-2].expr).type, (yyvsp[0].expr).type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , incompatibilite de type\n", ligne, colonne);
@@ -1525,7 +1525,7 @@ yyreduce:
     break;
 
   case 35: /* expression: expression MOINS expression  */
-#line 342 "syntax.y"
+#line 345 "syntax.y"
       {
           if(strcmp((yyvsp[-2].expr).type, (yyvsp[0].expr).type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , incompatibilite de type\n", ligne, colonne);
@@ -1541,7 +1541,7 @@ yyreduce:
     break;
 
   case 36: /* expression: expression MUL expression  */
-#line 354 "syntax.y"
+#line 357 "syntax.y"
       {
           if(strcmp((yyvsp[-2].expr).type, (yyvsp[0].expr).type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , incompatibilite de type\n", ligne, colonne);
@@ -1557,7 +1557,7 @@ yyreduce:
     break;
 
   case 37: /* expression: expression DIV expression  */
-#line 366 "syntax.y"
+#line 369 "syntax.y"
 {
     if((yyvsp[0].expr).val == 0)
     {
@@ -1583,7 +1583,7 @@ yyreduce:
     break;
 
   case 38: /* expression: PO expression PF  */
-#line 388 "syntax.y"
+#line 391 "syntax.y"
 {
     strcpy((yyval.expr).nom, (yyvsp[-1].expr).nom);
     strcpy((yyval.expr).type, (yyvsp[-1].expr).type);
@@ -1593,7 +1593,7 @@ yyreduce:
     break;
 
   case 39: /* expression: IDF  */
-#line 394 "syntax.y"
+#line 397 "syntax.y"
 {
     symbole *s = rechercher((yyvsp[0].str));
     if(s == NULL)
@@ -1608,7 +1608,7 @@ yyreduce:
     break;
 
   case 40: /* expression: ENTIER  */
-#line 405 "syntax.y"
+#line 408 "syntax.y"
 {
     if((yyvsp[0].entier) < -32768 || (yyvsp[0].entier) > 32767)
         printf("Erreur Sémantique : ligne %d , colonne %d , entier hors intervalle\n", ligne, colonne);
@@ -1623,7 +1623,7 @@ yyreduce:
     break;
 
   case 41: /* expression: REEL  */
-#line 416 "syntax.y"
+#line 419 "syntax.y"
       {
           char buffer[20];
           sprintf(buffer, "%f", (yyvsp[0].reel));
@@ -1636,7 +1636,7 @@ yyreduce:
     break;
 
   case 42: /* condition_logique: expression GT expression  */
-#line 428 "syntax.y"
+#line 431 "syntax.y"
 {   if(strcmp((yyvsp[-2].expr).type, (yyvsp[0].expr).type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
 
@@ -1652,7 +1652,7 @@ yyreduce:
     break;
 
   case 43: /* condition_logique: expression LT expression  */
-#line 440 "syntax.y"
+#line 443 "syntax.y"
 {   if(strcmp((yyvsp[-2].expr).type, (yyvsp[0].expr).type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
 
@@ -1667,7 +1667,7 @@ yyreduce:
     break;
 
   case 44: /* condition_logique: expression GE expression  */
-#line 451 "syntax.y"
+#line 454 "syntax.y"
 {   if(strcmp((yyvsp[-2].expr).type, (yyvsp[0].expr).type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
 
@@ -1682,7 +1682,7 @@ yyreduce:
     break;
 
   case 45: /* condition_logique: expression LE expression  */
-#line 462 "syntax.y"
+#line 465 "syntax.y"
 {   if(strcmp((yyvsp[-2].expr).type, (yyvsp[0].expr).type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
 
@@ -1697,7 +1697,7 @@ yyreduce:
     break;
 
   case 46: /* condition_logique: expression EQ expression  */
-#line 473 "syntax.y"
+#line 476 "syntax.y"
 {   if(strcmp((yyvsp[-2].expr).type, (yyvsp[0].expr).type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
 
@@ -1712,7 +1712,7 @@ yyreduce:
     break;
 
   case 47: /* condition_logique: expression NE expression  */
-#line 484 "syntax.y"
+#line 487 "syntax.y"
 {   if(strcmp((yyvsp[-2].expr).type, (yyvsp[0].expr).type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , comparaison entre types differents\n", ligne, colonne);
 
@@ -1920,7 +1920,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 496 "syntax.y"
+#line 499 "syntax.y"
 
 
 void yyerror(char *s)

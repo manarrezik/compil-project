@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ts.h"
 
 int ligne = 1;
 int colonne = 1;

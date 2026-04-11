@@ -83,7 +83,7 @@ declaration:
     symbole *s = rechercher($2);
     if(s != NULL)
     {
-        s->valeur = $4; // ✔ correction finale
+        s->valeur = $4; 
     }
 }
 ;
@@ -208,17 +208,20 @@ affectation:
           else if(strcmp(s->type, $6.type) != 0)
               printf("Erreur Sémantique : ligne %d , colonne %d , élément %s (type tableau invalide)\n", ligne, colonne, $1);
 
-          else
+         else
           {
-              ajouter_quad("=[]", $1, $6.nom, "TAB");
+              char index[20];
+              sprintf(index, "%d", $3);
 
-              if(strcmp($6.type, "INTEGER") == 0)
-                  s->tabValeurs[$3] = $6.val;
-              else
-                  s->tabValeurs[$3] = atof($6.nom);
+              ajouter_quad("=[]", $1, index, $6.nom);
+
+              s->tabValeurs[$3] = $6.val;
           }
       }
 ;
+
+   
+
 condition:
     IF PO condition_logique PF
     {
