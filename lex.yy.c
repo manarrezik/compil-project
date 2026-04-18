@@ -522,15 +522,16 @@ char *yytext;
 #include <string.h>
 #include "ts.h"
 
-int ligne = 1;
+int ligne   = 1;
 int colonne = 1;
 
 void erreur_lexicale()
 {
-    printf("Erreur Lexicale : ligne %d , colonne %d , élément %s\n", ligne, colonne, yytext);
+    printf("Erreur Lexicale : ligne %d , colonne %d , element %s\n",
+           ligne, colonne, yytext);
 }
-#line 533 "lex.yy.c"
 #line 534 "lex.yy.c"
+#line 535 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -747,10 +748,10 @@ YY_DECL
 		}
 
 	{
-#line 24 "lex.l"
+#line 26 "lex.l"
 
 
-#line 754 "lex.yy.c"
+#line 755 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -809,192 +810,191 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 26 "lex.l"
-{ colonne += yyleng; return PROGRAM; }
+#line 28 "lex.l"
+{ inserer_kw(yytext,"PROGRAM");  colonne+=yyleng; return PROGRAM;  }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 27 "lex.l"
-{ colonne += yyleng; return DECL; }
+#line 29 "lex.l"
+{ inserer_kw(yytext,"DECL");     colonne+=yyleng; return DECL;     }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 28 "lex.l"
-{ colonne += yyleng; return ENDDECL; }
+#line 30 "lex.l"
+{ inserer_kw(yytext,"ENDDECL"); colonne+=yyleng; return ENDDECL;  }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 29 "lex.l"
-{ colonne += yyleng; return BEGIN_; }
+#line 31 "lex.l"
+{ inserer_kw(yytext,"BEGIN");    colonne+=yyleng; return BEGIN_;   }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 30 "lex.l"
-{ colonne += yyleng; return END_; }
+#line 32 "lex.l"
+{ inserer_kw(yytext,"END");      colonne+=yyleng; return END_;     }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 31 "lex.l"
-{ colonne += yyleng; return INTEGER; }
+#line 33 "lex.l"
+{ inserer_kw(yytext,"INTEGER"); colonne+=yyleng; return INTEGER;  }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 32 "lex.l"
-{ colonne += yyleng; return FLOAT; }
+#line 34 "lex.l"
+{ inserer_kw(yytext,"FLOAT");   colonne+=yyleng; return FLOAT;    }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 33 "lex.l"
-{ colonne += yyleng; return CONST; }
+#line 35 "lex.l"
+{ inserer_kw(yytext,"CONST");   colonne+=yyleng; return CONST;    }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 34 "lex.l"
-{ colonne += yyleng; return IF; }
+#line 36 "lex.l"
+{ inserer_kw(yytext,"IF");       colonne+=yyleng; return IF;       }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 35 "lex.l"
-{ colonne += yyleng; return ELSE; }
+#line 37 "lex.l"
+{ inserer_kw(yytext,"ELSE");     colonne+=yyleng; return ELSE;     }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 36 "lex.l"
-{ colonne += yyleng; return FOR; }
+#line 38 "lex.l"
+{ inserer_kw(yytext,"FOR");      colonne+=yyleng; return FOR;      }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 37 "lex.l"
-{ colonne += yyleng; return WHILE; }
+#line 39 "lex.l"
+{ inserer_kw(yytext,"WHILE");    colonne+=yyleng; return WHILE;    }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 38 "lex.l"
-{ colonne += yyleng; return WRITE; }
+#line 40 "lex.l"
+{ inserer_kw(yytext,"WRITE");    colonne+=yyleng; return WRITE;    }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 40 "lex.l"
-{ colonne += yyleng; return EQ; }
+#line 43 "lex.l"
+{ inserer_sep(yytext,"EQ");    colonne+=yyleng; return EQ;    }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 41 "lex.l"
-{ colonne += yyleng; return NE; }
+#line 44 "lex.l"
+{ inserer_sep(yytext,"NE");    colonne+=yyleng; return NE;    }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 42 "lex.l"
-{ colonne += yyleng; return GE; }
+#line 45 "lex.l"
+{ inserer_sep(yytext,"GE");    colonne+=yyleng; return GE;    }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 43 "lex.l"
-{ colonne += yyleng; return LE; }
+#line 46 "lex.l"
+{ inserer_sep(yytext,"LE");    colonne+=yyleng; return LE;    }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 44 "lex.l"
-{ colonne += yyleng; return GT; }
+#line 47 "lex.l"
+{ inserer_sep(yytext,"GT");    colonne+=yyleng; return GT;    }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 45 "lex.l"
-{ colonne += yyleng; return LT; }
+#line 48 "lex.l"
+{ inserer_sep(yytext,"LT");    colonne+=yyleng; return LT;    }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 47 "lex.l"
-{ colonne += yyleng; return AND; }
+#line 49 "lex.l"
+{ inserer_sep(yytext,"AND");   colonne+=yyleng; return AND;   }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 48 "lex.l"
-{ colonne += yyleng; return OR; }
+#line 50 "lex.l"
+{ inserer_sep(yytext,"OR");    colonne+=yyleng; return OR;    }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 49 "lex.l"
-{ colonne += yyleng; return NOT; }
+#line 51 "lex.l"
+{ inserer_sep(yytext,"NOT");   colonne+=yyleng; return NOT;   }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 51 "lex.l"
-{ colonne += yyleng; return PLUS; }
+#line 52 "lex.l"
+{ inserer_sep(yytext,"PLUS");  colonne+=yyleng; return PLUS;  }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 52 "lex.l"
-{ colonne += yyleng; return MOINS; }
+#line 53 "lex.l"
+{ inserer_sep(yytext,"MOINS"); colonne+=yyleng; return MOINS; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 53 "lex.l"
-{ colonne += yyleng; return MUL; }
+#line 54 "lex.l"
+{ inserer_sep(yytext,"MUL");   colonne+=yyleng; return MUL;   }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 54 "lex.l"
-{ colonne += yyleng; return DIV; }
+#line 55 "lex.l"
+{ inserer_sep(yytext,"DIV");   colonne+=yyleng; return DIV;   }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
 #line 56 "lex.l"
-{ colonne += yyleng; return AFF; }
+{ inserer_sep(yytext,"AFF");   colonne+=yyleng; return AFF;   }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 58 "lex.l"
-{ colonne += yyleng; return PV; }
+#line 57 "lex.l"
+{ inserer_sep(yytext,"PV");    colonne+=yyleng; return PV;    }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 59 "lex.l"
-{ colonne += yyleng; return VIRG; }
+#line 58 "lex.l"
+{ inserer_sep(yytext,"VIRG");  colonne+=yyleng; return VIRG;  }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 60 "lex.l"
-{ colonne += yyleng; return DP; }
+#line 59 "lex.l"
+{ inserer_sep(yytext,"DP");    colonne+=yyleng; return DP;    }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 61 "lex.l"
-{ colonne += yyleng; return PO; }
+#line 60 "lex.l"
+{ inserer_sep(yytext,"PO");    colonne+=yyleng; return PO;    }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 62 "lex.l"
-{ colonne += yyleng; return PF; }
+#line 61 "lex.l"
+{ inserer_sep(yytext,"PF");    colonne+=yyleng; return PF;    }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 63 "lex.l"
-{ colonne += yyleng; return AO; }
+#line 62 "lex.l"
+{ inserer_sep(yytext,"AO");    colonne+=yyleng; return AO;    }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 64 "lex.l"
-{ colonne += yyleng; return AF; }
+#line 63 "lex.l"
+{ inserer_sep(yytext,"AF");    colonne+=yyleng; return AF;    }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 65 "lex.l"
-{ colonne += yyleng; return CO; }
+#line 64 "lex.l"
+{ inserer_sep(yytext,"CO");    colonne+=yyleng; return CO;    }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 66 "lex.l"
-{ colonne += yyleng; return CF; }
+#line 65 "lex.l"
+{ inserer_sep(yytext,"CF");    colonne+=yyleng; return CF;    }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
 #line 68 "lex.l"
 {
     char temp[20];
-    strncpy(temp, yytext + 1, yyleng - 2);
-    temp[yyleng - 2] = '\0';
-
+    strncpy(temp, yytext+1, yyleng-2);
+    temp[yyleng-2] = '\0';
     yylval.reel = atof(temp);
     colonne += yyleng;
     return REEL;
@@ -1002,12 +1002,11 @@ YY_RULE_SETUP
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 78 "lex.l"
+#line 76 "lex.l"
 {
     char temp[20];
-    strncpy(temp, yytext + 1, yyleng - 2); // enlever '(' et ')'
-    temp[yyleng - 2] = '\0';
-
+    strncpy(temp, yytext+1, yyleng-2);
+    temp[yyleng-2] = '\0';
     yylval.entier = atoi(temp);
     colonne += yyleng;
     return ENTIER;
@@ -1015,9 +1014,11 @@ YY_RULE_SETUP
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 88 "lex.l"
+#line 85 "lex.l"
 {
-    printf("Erreur Lexicale : ligne %d , colonne %d , nombre signe doit etre entre parentheses %s\n", ligne, colonne, yytext);
+    printf("Erreur Lexicale : ligne %d , colonne %d , nombre signe sans parentheses %s\n",
+           ligne, colonne, yytext);
+    colonne += yyleng;
 }
 	YY_BREAK
 case 40:
@@ -1031,7 +1032,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 97 "lex.l"
+#line 96 "lex.l"
 {
     yylval.entier = atoi(yytext);
     colonne += yyleng;
@@ -1040,53 +1041,56 @@ YY_RULE_SETUP
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 102 "lex.l"
+#line 101 "lex.l"
 {
-    printf("Erreur Lexicale : ligne %d , colonne %d , identificateur trop long %s\n", ligne, colonne, yytext);
+    printf("Erreur Lexicale : ligne %d , colonne %d , identificateur trop long %s\n",
+           ligne, colonne, yytext);
+    colonne += yyleng;
 }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 105 "lex.l"
+#line 106 "lex.l"
 {
     yylval.str = strdup(yytext);
+    inserer_idf(yytext, "IDF");  
     colonne += yyleng;
     return IDF;
 }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 111 "lex.l"
+#line 113 "lex.l"
 { colonne += yyleng; }
 	YY_BREAK
 case 45:
 /* rule 45 can match eol */
 YY_RULE_SETUP
-#line 112 "lex.l"
+#line 114 "lex.l"
 { ligne++; colonne = 1; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 114 "lex.l"
+#line 115 "lex.l"
 ;
 	YY_BREAK
 case 47:
 /* rule 47 can match eol */
 YY_RULE_SETUP
-#line 115 "lex.l"
+#line 116 "lex.l"
 ;
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 117 "lex.l"
+#line 118 "lex.l"
 { erreur_lexicale(); colonne += yyleng; }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 119 "lex.l"
+#line 120 "lex.l"
 ECHO;
 	YY_BREAK
-#line 1090 "lex.yy.c"
+#line 1094 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2091,7 +2095,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 119 "lex.l"
-
+#line 120 "lex.l"
 
 int yywrap() { return 1; }

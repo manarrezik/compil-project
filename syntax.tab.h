@@ -101,18 +101,17 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 24 "syntax.y"
+#line 26 "syntax.y"
 
-    int entier;
+    int   entier;
     float reel;
     char* str;
     struct {
-    char nom[20];
-    char type[10];
-    float val;  
-} expr;
+        char nom[20];
+        char type[10];
+    } expr;
 
-#line 116 "syntax.tab.h"
+#line 115 "syntax.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -1,7 +1,8 @@
  PROGRAM test
 DECL
 INTEGER: a,b,c;        // double declaration
-FLOAT: x,y;
+FLOAT: x=2.6,y;
+INTEGER: h=2;  
 INTEGER: tab[3];
 CONST z = 5;
 ENDDECL
@@ -10,7 +11,7 @@ BEGIN
 
 a = (-5);
 b = (+10);
-c = a + b * ((-2) + 3);     // parenthèses correctes
+c = a + b * ((-2) + 3);  
 
 x = 3.5;
 //a = x;                   // erreur incompatibilité type

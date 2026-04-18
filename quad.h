@@ -13,7 +13,6 @@ extern int qc;
 
 void ajouter_quad(char *op, char *arg1, char *arg2, char *res);
 void afficher_quad();
-void executer_quads();
 void maj_quad(int index, char *val);
 
 #endif
