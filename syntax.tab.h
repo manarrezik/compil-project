@@ -101,7 +101,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 26 "syntax.y"
+#line 27 "syntax.y"
 
     int   entier;
     float reel;

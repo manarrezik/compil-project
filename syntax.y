@@ -4,6 +4,7 @@
 #include <string.h>
 #include "ts.h"
 #include "quad.h"
+#include "optim.h"
 
 extern int ligne;
 extern int colonne;
@@ -11,11 +12,11 @@ extern char* yytext;
 extern int qc;
 
 int temp = 1;
-char tmp[20];
 char currentType[10];
 
 char* newTemp()
 {
+    static char tmp[20];
     sprintf(tmp, "T%d", temp++);
     return strdup(tmp);
 }
@@ -104,17 +105,7 @@ type:
   | FLOAT   { $$ = "FLOAT";   }
 ;
 
-/*
-   liste_idf gère 4 cas :
-   1. a
-   2. a = valeur
-   3. a[taille]
-   4. liste , a
-   5. liste , a = valeur
-   6. liste , a[taille]
-*/
 liste_idf:
-
     IDF
     {
         symbole *s = rechercher($1);
@@ -131,7 +122,6 @@ liste_idf:
 
   | IDF AFF valeur
     {
-        /* déclaration avec valeur initiale : INTEGER : a = 2 ; */
         symbole *s = rechercher($1);
         if (s != NULL && s->declared == 1)
             printf("Erreur Semantique : ligne %d , colonne %d , element %s (double declaration)\n",
@@ -143,7 +133,6 @@ liste_idf:
             s->valeur   = $3;
             s->init     = 1;
             s->declared = 1;
-            /* quadruplet d'initialisation */
             char buf[20];
             if (strcmp(currentType, "FLOAT") == 0)
                 sprintf(buf, "%f", $3);
@@ -190,7 +179,6 @@ liste_idf:
 
   | liste_idf VIRG IDF AFF valeur
     {
-        /* INTEGER : a, b = 5 ; */
         symbole *s = rechercher($3);
         if (s != NULL && s->declared == 1)
             printf("Erreur Semantique : ligne %d , colonne %d , element %s (double declaration)\n",
@@ -549,5 +537,6 @@ int main()
     yyparse();
     afficher_ts(1);
     afficher_quad();
+    optimiser();
     return 0;
 }

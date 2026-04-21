@@ -62,21 +62,6 @@ void inserer_kw(char *nom, char *code)
     count_kw++;
 }
 
-void set_type(char *nom, char *type)
-{
-    symbole *s = rechercher(nom);
-    if (s) strcpy(s->type, type);
-}
-
-void set_valeur(char *nom, float val)
-{
-    symbole *s = rechercher(nom);
-    if (s) {
-        s->valeur = val;
-        s->init   = 1;
-    }
-}
-
 void afficher_ts(int mode)
 {
     int i;
@@ -86,7 +71,7 @@ void afficher_ts(int mode)
 
     if (mode == 0) {
         printf("%-15s %-10s\n", "Nom", "Code");
-        printf("---------------------------\n");
+        printf("----------------------------------------------------------\n");
         for (i = 0; i < SIZE; i++) {
             s = table_idf[i];
             while (s) {
@@ -97,7 +82,7 @@ void afficher_ts(int mode)
     } else {
         printf("%-15s %-10s %-12s %-12s %-6s\n",
                "Nom", "Code", "Type", "Valeur", "Taille");
-        printf("-------------------------------------------------------\n");
+        printf("--------------------------------------------------------\n");
         for (i = 0; i < SIZE; i++) {
             s = table_idf[i];
             while (s) {
@@ -124,13 +109,13 @@ void afficher_ts(int mode)
 
     printf("\n================ TABLE DES SEPARATEURS ================\n");
     printf("%-15s %-10s\n", "Nom", "Code");
-    printf("--------------------------------\n");
+    printf("-------------------------------------------------------\n");
     for (i = 0; i < count_sep; i++)
         printf("%-15s %-10s\n", table_sep[i].nom, table_sep[i].code);
 
     printf("\n================ TABLE DES MOTS-CLES ================\n");
     printf("%-15s %-10s\n", "Nom", "Code");
-    printf("--------------------------------\n");
+    printf("-----------------------------------------------------\n");
     for (i = 0; i < count_kw; i++)
         printf("%-15s %-10s\n", table_kw[i].nom, table_kw[i].code);
 }
