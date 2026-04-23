@@ -56,13 +56,14 @@ int yylex();
 %type <entier> boucle_for
 %type <entier> boucle_while
 
+%nonassoc  NOT
 %left  OR
 %left  AND
 %left  EQ NE
 %left  GT LT GE LE
 %left  PLUS MOINS
 %left  MUL DIV
-%right NOT
+
 
 %%
 

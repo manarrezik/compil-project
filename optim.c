@@ -8,254 +8,171 @@
 extern quad Q[];
 extern int  qc;
 
-/* ================================================================
-   UTILITAIRES
-   ================================================================ */
+#define MAX_Q 1000
 
-static int est_constante(const char *s)
+int est_nombre(char *s)
 {
-    if (!s || s[0] == '\0') return 0;
     int i = 0;
-    if (s[i] == '-' || s[i] == '+') i++;
-    if (s[i] == '\0') return 0;
-    int point = 0;
-    for (; s[i]; i++) {
-        if (s[i] == '.')  { if (point++) return 0; }
-        else if (!isdigit((unsigned char)s[i])) return 0;
-    }
+    if (s[0] == '\0') return 0;
+    if (s[0] == '-' || s[0] == '+') i = 1;
+    for (; s[i] != '\0'; i++)
+        if (!isdigit(s[i]) && s[i] != '.') return 0;
     return 1;
 }
 
-static int est_arith(const char *op)
+/* ecrire et comparer  */
+void ecrire_quads(char *fichier)
 {
-    return strcmp(op,"+")==0 || strcmp(op,"-")==0 ||
-           strcmp(op,"*")==0 || strcmp(op,"/")==0;
+    FILE *f = fopen(fichier, "w");
+    fprintf(f, "%d\n", qc);
+    for (int i = 0; i < qc; i++)
+        fprintf(f, "%s|%s|%s|%s\n",
+                Q[i].op, Q[i].arg1, Q[i].arg2, Q[i].res);
+    fclose(f);
 }
 
-/* Invalider une variable dans le tableau d'expressions connues */
-#define MAX_EXPR 500
-typedef struct { char op[10]; char a1[20]; char a2[20]; char res[20]; } ExprCache;
-static ExprCache cache[MAX_EXPR];
-static int cache_cnt = 0;
-
-static void cache_invalider(const char *nom)
+int fichiers_identiques(char *f1, char *f2)
 {
-    for (int i = 0; i < cache_cnt; i++) {
-        if (strcmp(cache[i].a1, nom)==0 ||
-            strcmp(cache[i].a2, nom)==0 ||
-            strcmp(cache[i].res, nom)==0) {
-            /* retirer en décalant */
-            for (int j = i; j < cache_cnt-1; j++)
-                cache[j] = cache[j+1];
-            cache_cnt--;
-            i--;
+    FILE *a = fopen(f1, "r");
+    FILE *b = fopen(f2, "r");
+    int ca, cb;
+    do {
+        ca = fgetc(a);
+        cb = fgetc(b);
+        if (ca != cb) { fclose(a); fclose(b); return 0; }
+    } while (ca != EOF);
+    fclose(a); fclose(b);
+    return 1;
+}
+
+/* sauvgarder pour afficher la differance */
+quad Q_avant[MAX_Q];
+int  qc_avant;
+
+void sauvegarder()
+{
+    qc_avant = qc;
+    for (int i = 0; i < qc; i++)
+        Q_avant[i] = Q[i];
+}
+
+void afficher_changements(char *nom_passe)
+{
+    int nb = 0;
+    for (int i = 0; i < qc && i < qc_avant; i++) {
+        if (strcmp(Q[i].op,   Q_avant[i].op)   != 0 ||
+            strcmp(Q[i].arg1, Q_avant[i].arg1)  != 0 ||
+            strcmp(Q[i].arg2, Q_avant[i].arg2)  != 0 ||
+            strcmp(Q[i].res,  Q_avant[i].res)   != 0) {
+            if (nb == 0)
+                printf("  [%s] Modifications :\n", nom_passe);
+            printf("    %d: (%s,%s,%s,%s) => (%s,%s,%s,%s)\n", i,
+                   Q_avant[i].op, Q_avant[i].arg1,
+                   Q_avant[i].arg2, Q_avant[i].res,
+                   Q[i].op, Q[i].arg1,
+                   Q[i].arg2, Q[i].res);
+            nb++;
         }
     }
+    int suppr = qc_avant - qc;
+    if (suppr > 0)
+        printf("  [%s] %d quadruplet(s) elimine(s)\n", nom_passe, suppr);
+    if (nb == 0 && suppr == 0)
+        printf("  [%s] Aucun changement\n", nom_passe);
 }
 
-static const char *cache_chercher(const char *op, const char *a1, const char *a2)
+/*SIMPLIFICATION ALGEBRIQUE */
+void simplification_algebrique()
 {
-    for (int i = 0; i < cache_cnt; i++)
-        if (strcmp(cache[i].op,op)==0 &&
-            strcmp(cache[i].a1,a1)==0 &&
-            strcmp(cache[i].a2,a2)==0)
-            return cache[i].res;
-    return NULL;
-}
+    int i, j;
+    for (i = 0; i < qc; i++) {
 
-static void cache_ajouter(const char *op, const char *a1, const char *a2, const char *res)
-{
-    if (cache_cnt >= MAX_EXPR) return;
-    strcpy(cache[cache_cnt].op,  op);
-    strcpy(cache[cache_cnt].a1,  a1);
-    strcpy(cache[cache_cnt].a2,  a2);
-    strcpy(cache[cache_cnt].res, res);
-    cache_cnt++;
-}
+        /* ignorer si ce n est pas une operation arithmetique */
+        if (strcmp(Q[i].op, "+") != 0 &&
+            strcmp(Q[i].op, "-") != 0 &&
+            strcmp(Q[i].op, "*") != 0 &&
+            strcmp(Q[i].op, "/") != 0) continue;
 
-/* Table copie : Ti = Tj  → remplacer Ti par Tj dans les suivants */
-#define MAX_COPY 200
-typedef struct { char from[20]; char to[20]; } CopyEntry;
-static CopyEntry copies[MAX_COPY];
-static int copy_cnt = 0;
-
-static void copy_set(const char *from, const char *to)
-{
-    /* invalider les copies impliquant "from" */
-    for (int i = 0; i < copy_cnt; i++)
-        if (strcmp(copies[i].from,from)==0 || strcmp(copies[i].to,from)==0) {
-            for (int j=i;j<copy_cnt-1;j++) copies[j]=copies[j+1];
-            copy_cnt--; i--;
-        }
-    if (copy_cnt < MAX_COPY) {
-        strcpy(copies[copy_cnt].from, from);
-        strcpy(copies[copy_cnt].to,   to);
-        copy_cnt++;
-    }
-}
-
-static const char *copy_get(const char *nom)
-{
-    for (int i = 0; i < copy_cnt; i++)
-        if (strcmp(copies[i].from, nom)==0)
-            return copies[i].to;
-    return NULL;
-}
-
-static void copy_invalider(const char *nom)
-{
-    for (int i = 0; i < copy_cnt; i++)
-        if (strcmp(copies[i].from,nom)==0 || strcmp(copies[i].to,nom)==0) {
-            for (int j=i;j<copy_cnt-1;j++) copies[j]=copies[j+1];
-            copy_cnt--; i--;
-        }
-}
-
-/* Résoudre un argument via la table des copies */
-static void resoudre_arg(char *arg)
-{
-    const char *v = copy_get(arg);
-    if (v) strcpy(arg, v);
-}
-
-/* ================================================================
-   PASSE 1 : Propagation d'expression
-   Si Ti = expr et Ti utilisé une seule fois après → substituer
-   ================================================================ */
-static int compter_utilisations(int from, const char *nom)
-{
-    int cnt = 0;
-    for (int i = from+1; i < qc; i++) {
-        if (strcmp(Q[i].arg1, nom)==0) cnt++;
-        if (strcmp(Q[i].arg2, nom)==0) cnt++;
-        if (strcmp(Q[i].res,  nom)==0) { cnt += 10; break; } /* réécrit */
-    }
-    return cnt;
-}
-
-static void passe_propagation_expression()
-{
-    for (int i = 0; i < qc; i++) {
-        /* Ti = a op b  et Ti utilisé UNE seule fois */
-        if (!est_arith(Q[i].op)) continue;
-        if (Q[i].res[0] != 'T')  continue;
-
-        int uses = compter_utilisations(i, Q[i].res);
-        if (uses != 1) continue;
-
-        /* trouver l'utilisation */
-        for (int j = i+1; j < qc; j++) {
-            /* si le résultat est réécrit avant utilisation → stop */
-            if (strcmp(Q[j].res, Q[i].res)==0) break;
-            /* invalider si a1 ou a2 sont modifiés entre i et j */
-            int invalide = 0;
-            for (int k = i+1; k < j; k++) {
-                if (strcmp(Q[k].res, Q[i].arg1)==0 ||
-                    strcmp(Q[k].res, Q[i].arg2)==0) { invalide=1; break; }
-            }
-            if (invalide) break;
-
-            int changed = 0;
-            if (strcmp(Q[j].arg1, Q[i].res)==0) {
-                /* propager : remplacer Ti dans arg1 par arg1_i op arg2_i */
-                /* on insère un nouveau quad intermédiaire — trop complexe en linéaire
-                   On fait juste la substitution d'arg si op est = */
-            }
-            if (strcmp(Q[j].arg2, Q[i].res)==0) { (void)changed; break; }
-            (void)changed;
-            break;
-        }
-    }
-    /* NOTE : la propagation d'expression complète nécessite réécriture d'arbre.
-       On l'implémente via la simplification algébrique + propagation de copie ci-dessous. */
-}
-
-/* ================================================================
-   PASSE 2 : Simplification algébrique
-   x + 1 - 1  →  x        (neutralité addition/soustraction)
-   x * 1      →  x
-   x * 0      →  0
-   x + 0      →  x
-   x - 0      →  x
-   x * 2      →  x + x   (remplacement multiplication par addition)
-   ================================================================ */
-static void passe_simplification_algebrique()
-{
-    for (int i = 0; i < qc; i++) {
-        if (!est_arith(Q[i].op)) continue;
-
-        const char *a1 = Q[i].arg1;
-        const char *a2 = Q[i].arg2;
-        const char *op = Q[i].op;
-
-        /* x + 0  ou  x - 0  →  = x */
-        if ((strcmp(op,"+")==0 || strcmp(op,"-")==0) &&
-            (strcmp(a2,"0")==0 || strcmp(a2,"0.000000")==0)) {
-            strcpy(Q[i].op,   "=");
+        /* x + 0 = x  ou  x - 0 = x */
+        if (strcmp(Q[i].arg2, "0") == 0 &&
+            (strcmp(Q[i].op, "+") == 0 || strcmp(Q[i].op, "-") == 0)) {
+            strcpy(Q[i].op, "=");
             strcpy(Q[i].arg2, "");
             continue;
         }
-        /* 0 + x  →  = x */
-        if (strcmp(op,"+")==0 && (strcmp(a1,"0")==0 || strcmp(a1,"0.000000")==0)) {
-            strcpy(Q[i].op,   "=");
+
+        /* 0 + x = x */
+        if (strcmp(Q[i].arg1, "0") == 0 && strcmp(Q[i].op, "+") == 0) {
+            strcpy(Q[i].op, "=");
             strcpy(Q[i].arg1, Q[i].arg2);
             strcpy(Q[i].arg2, "");
             continue;
         }
-        /* x * 1  →  = x */
-        if (strcmp(op,"*")==0 &&
-            (strcmp(a2,"1")==0 || strcmp(a2,"1.000000")==0)) {
-            strcpy(Q[i].op,   "=");
+
+        /* x * 1 = x */
+        if (strcmp(Q[i].arg2, "1") == 0 && strcmp(Q[i].op, "*") == 0) {
+            strcpy(Q[i].op, "=");
             strcpy(Q[i].arg2, "");
             continue;
         }
-        /* 1 * x  →  = x */
-        if (strcmp(op,"*")==0 &&
-            (strcmp(a1,"1")==0 || strcmp(a1,"1.000000")==0)) {
-            strcpy(Q[i].op,   "=");
+
+        /* 1 * x = x */
+        if (strcmp(Q[i].arg1, "1") == 0 && strcmp(Q[i].op, "*") == 0) {
+            strcpy(Q[i].op, "=");
             strcpy(Q[i].arg1, Q[i].arg2);
             strcpy(Q[i].arg2, "");
             continue;
         }
-        /* x * 0  ou  0 * x  →  = 0 */
-        if (strcmp(op,"*")==0 &&
-            (strcmp(a1,"0")==0 || strcmp(a2,"0")==0)) {
-            strcpy(Q[i].op,   "=");
+
+        /* x * 0 = 0  ou  0 * x = 0 */
+        if (strcmp(Q[i].op, "*") == 0 &&
+            (strcmp(Q[i].arg1, "0") == 0 || strcmp(Q[i].arg2, "0") == 0)) {
+            strcpy(Q[i].op, "=");
             strcpy(Q[i].arg1, "0");
             strcpy(Q[i].arg2, "");
             continue;
         }
-        /* x / 1  →  = x */
-        if (strcmp(op,"/")==0 &&
-            (strcmp(a2,"1")==0 || strcmp(a2,"1.000000")==0)) {
-            strcpy(Q[i].op,   "=");
+
+        /* x / 1 = x */
+        if (strcmp(Q[i].arg2, "1") == 0 && strcmp(Q[i].op, "/") == 0) {
+            strcpy(Q[i].op, "=");
             strcpy(Q[i].arg2, "");
             continue;
         }
 
-        /* simplification T = (y +/- c1) +/- c2 en cherchant dans les précédents */
-        /* ex: t11 = t10 - 1  et  t10 = j + 1  →  t11 = j + 1 - 1 = j */
-        if ((strcmp(op,"+")==0 || strcmp(op,"-")==0) && est_constante(a2)) {
-            /* chercher si a1 est un temp défini juste avant par a_x op c */
-            for (int j = i-1; j >= 0; j--) {
-                if (strcmp(Q[j].res, a1)==0) {
-                    if ((strcmp(Q[j].op,"+")==0 || strcmp(Q[j].op,"-")==0)
-                        && est_constante(Q[j].arg2)) {
-                        float c1 = atof(Q[j].arg2);
-                        float c2 = atof(a2);
-                        float r;
-                        if (strcmp(Q[j].op,"+")==0) r = c1;  else r = -c1;
-                        if (strcmp(op,      "+")==0) r += c2; else r -= c2;
+        /* (x + c1) - c2 = x  si c1 et c2 s annulent
+           exemple : T8 = a + 1  puis T12 = T8 - 1  → T12 = a  */
+        if ((strcmp(Q[i].op, "+") == 0 || strcmp(Q[i].op, "-") == 0)
+            && est_nombre(Q[i].arg2)) {
 
-                        char buf[20];
+            /* chercher en arriere le quad qui calcule Q[i].arg1 */
+            for (j = i - 1; j >= 0; j--) {
+                if (strcmp(Q[j].res, Q[i].arg1) == 0) {
+                    /* verifier que ce quad est aussi + ou - avec constante */
+                    if ((strcmp(Q[j].op, "+") == 0 || strcmp(Q[j].op, "-") == 0)
+                        && est_nombre(Q[j].arg2)) {
+
+                        float c1 = atof(Q[j].arg2);
+                        float c2 = atof(Q[i].arg2);
+                        float r;
+
+                        /* signe de c1 selon l operation du quad j */
+                        if (strcmp(Q[j].op, "+") == 0) r =  c1;
+                        else                           r = -c1;
+
+                        /* signe de c2 selon l operation du quad i */
+                        if (strcmp(Q[i].op, "+") == 0) r += c2;
+                        else                           r -= c2;
+
+                        /* si le resultat est 0 : Ti = base */
                         if (r == 0) {
-                            /* résultat = arg de base */
                             strcpy(Q[i].op,   "=");
                             strcpy(Q[i].arg1, Q[j].arg1);
                             strcpy(Q[i].arg2, "");
                         } else {
-                            if (r == (int)r) sprintf(buf,"%d",(int)r);
-                            else             sprintf(buf,"%g",r);
+                            /* sinon : Ti = base + r */
+                            char buf[20];
+                            sprintf(buf, "%d", (int)r);
                             strcpy(Q[i].op,   "+");
                             strcpy(Q[i].arg1, Q[j].arg1);
                             strcpy(Q[i].arg2, buf);
@@ -268,154 +185,298 @@ static void passe_simplification_algebrique()
     }
 }
 
-/* ================================================================
-   PASSE 3 : Propagation de copie
-   Ti = Tj  →  remplacer Ti par Tj dans tous les suivants
-   ================================================================ */
-static void passe_propagation_copie()
-{
-    copy_cnt = 0;
-    for (int i = 0; i < qc; i++) {
-        /* résoudre arg1 et arg2 via la table des copies */
-        resoudre_arg(Q[i].arg1);
-        if (Q[i].arg2[0]) resoudre_arg(Q[i].arg2);
+/* ============================================================
+   PASSE 2 : PROPAGATION DE COPIE
+   Si on a  Ti = Tj  alors on remplace Ti par Tj partout apres.
+   Exemple : b = T8  → la prochaine fois qu on lit b, on met T8.
 
-        /* si c'est une copie simple Ti = Tj  (pas Ti = constante) */
-        if (strcmp(Q[i].op,"=")==0 && Q[i].arg2[0]=='\0' && !est_constante(Q[i].arg1)) {
-            copy_set(Q[i].res, Q[i].arg1);
-        } else {
-            /* invalider les copies qui impliquent le résultat */
-            if (Q[i].res[0]) copy_invalider(Q[i].res);
+   On utilise deux tableaux simples :
+     copie_de[k]  = nom de la variable copiee
+     copie_vers[k] = valeur qu elle copie
+   ============================================================ */
+char copie_de  [100][20];
+char copie_vers[100][20];
+int  nb_copies;
+
+/* chercher si on connait la valeur copiee de ce nom */
+char *trouver_copie(char *nom)
+{
+    int i;
+    for (i = 0; i < nb_copies; i++)
+        if (strcmp(copie_de[i], nom) == 0)
+            return copie_vers[i];
+    return NULL;  /* pas trouve */
+}
+
+/* supprimer les copies qui parlent de ce nom */
+void supprimer_copies(char *nom)
+{
+    int i, j;
+    for (i = 0; i < nb_copies; i++) {
+        if (strcmp(copie_de[i],   nom) == 0 ||
+            strcmp(copie_vers[i], nom) == 0) {
+            /* decaler le reste du tableau */
+            for (j = i; j < nb_copies - 1; j++) {
+                strcpy(copie_de[j],   copie_de[j+1]);
+                strcpy(copie_vers[j], copie_vers[j+1]);
+            }
+            nb_copies--;
+            i--;
         }
     }
 }
 
-/* ================================================================
-   PASSE 4 : Élimination d'expressions redondantes (communes)
-   Ti = a op b  déjà calculé → Tj = Ti
-   ================================================================ */
-static void passe_expressions_redondantes()
+void propagation_copie()
 {
-    cache_cnt = 0;
-    for (int i = 0; i < qc; i++) {
-        /* invalider cache si arg1 ou arg2 ont été modifiés */
-        if (Q[i].res[0]) cache_invalider(Q[i].res);
+    int i;
+    char *v;
+    nb_copies = 0;
 
-        if (!est_arith(Q[i].op) &&
-            strcmp(Q[i].op,"="  )!=0) continue;
+    for (i = 0; i < qc; i++) {
 
-        if (est_arith(Q[i].op)) {
-            /* chercher si a op b déjà dans le cache */
-            const char *prev = cache_chercher(Q[i].op, Q[i].arg1, Q[i].arg2);
-            if (prev) {
-                /* remplacer Ti = a op b  par  Ti = prev */
+        /* remplacer arg1 si on connait sa copie */
+        v = trouver_copie(Q[i].arg1);
+        if (v != NULL) strcpy(Q[i].arg1, v);
+
+        /* remplacer arg2 si on connait sa copie */
+        if (Q[i].arg2[0] != '\0') {
+            v = trouver_copie(Q[i].arg2);
+            if (v != NULL) strcpy(Q[i].arg2, v);
+        }
+
+        /* si ce quad est une copie simple  Ti = Tj  → memoriser */
+        if (strcmp(Q[i].op, "=") == 0 &&
+            Q[i].arg2[0] == '\0'      &&
+            !est_nombre(Q[i].arg1)) {
+
+            supprimer_copies(Q[i].res);
+            strcpy(copie_de  [nb_copies], Q[i].res);
+            strcpy(copie_vers [nb_copies], Q[i].arg1);
+            nb_copies++;
+
+        } else {
+            /* le resultat est recalcule → invalider les copies le concernant */
+            if (Q[i].res[0] != '\0')
+                supprimer_copies(Q[i].res);
+        }
+    }
+}
+
+/* ============================================================
+   PASSE 3 : ELIMINATION DES EXPRESSIONS REDONDANTES
+   Si  a op b  a deja ete calcule dans Ti,
+   et que a et b n ont pas change depuis,
+   on remplace le nouveau calcul par  Tj = Ti.
+
+   On utilise des tableaux simples :
+     expr_op[k], expr_a1[k], expr_a2[k] = l expression
+     expr_res[k]                         = le temporaire qui la contient
+   ============================================================ */
+char expr_op [100][10];
+char expr_a1 [100][20];
+char expr_a2 [100][20];
+char expr_res[100][20];
+int  nb_exprs;
+
+/* chercher si cette expression a deja ete calculee */
+char *trouver_expression(char *op, char *a1, char *a2)
+{
+    int i;
+    for (i = 0; i < nb_exprs; i++)
+        if (strcmp(expr_op[i], op) == 0 &&
+            strcmp(expr_a1[i], a1) == 0 &&
+            strcmp(expr_a2[i], a2) == 0)
+            return expr_res[i];
+    return NULL;  /* pas trouvee */
+}
+
+/* supprimer les expressions qui utilisent ce nom */
+void supprimer_expressions(char *nom)
+{
+    int i, j;
+    for (i = 0; i < nb_exprs; i++) {
+        if (strcmp(expr_a1[i],  nom) == 0 ||
+            strcmp(expr_a2[i],  nom) == 0 ||
+            strcmp(expr_res[i], nom) == 0) {
+            for (j = i; j < nb_exprs - 1; j++) {
+                strcpy(expr_op [j], expr_op [j+1]);
+                strcpy(expr_a1 [j], expr_a1 [j+1]);
+                strcpy(expr_a2 [j], expr_a2 [j+1]);
+                strcpy(expr_res[j], expr_res[j+1]);
+            }
+            nb_exprs--;
+            i--;
+        }
+    }
+}
+
+void elimination_expressions_redondantes()
+{
+    int i;
+    char *deja;
+    nb_exprs = 0;
+
+    for (i = 0; i < qc; i++) {
+
+        /* si ce quad modifie une variable → invalider les expressions */
+        if (Q[i].res[0] != '\0')
+            supprimer_expressions(Q[i].res);
+
+        /* si c est une operation arithmetique */
+        if (strcmp(Q[i].op, "+") == 0 || strcmp(Q[i].op, "-") == 0 ||
+            strcmp(Q[i].op, "*") == 0 || strcmp(Q[i].op, "/") == 0) {
+
+            deja = trouver_expression(Q[i].op, Q[i].arg1, Q[i].arg2);
+
+            if (deja != NULL) {
+                /* expression deja calculee → remplacer par copie */
                 strcpy(Q[i].op,   "=");
-                strcpy(Q[i].arg1, prev);
+                strcpy(Q[i].arg1, deja);
                 strcpy(Q[i].arg2, "");
             } else {
-                cache_ajouter(Q[i].op, Q[i].arg1, Q[i].arg2, Q[i].res);
+                /* nouvelle expression → la memoriser */
+                strcpy(expr_op [nb_exprs], Q[i].op);
+                strcpy(expr_a1 [nb_exprs], Q[i].arg1);
+                strcpy(expr_a2 [nb_exprs], Q[i].arg2);
+                strcpy(expr_res[nb_exprs], Q[i].res);
+                nb_exprs++;
             }
         }
     }
 }
 
-/* ================================================================
-   PASSE 5 : Élimination du code inutile (code mort)
-   Un quadruplet est mort si son résultat n'est plus utilisé après
-   et que l'opération n'a pas d'effet de bord
-   ================================================================ */
-static int utilise_apres(int from, const char *nom)
+/* ============================================================
+   PASSE 4 : ELIMINATION DU CODE MORT
+   Un quad est mort si son resultat n est jamais relu apres lui.
+   On le supprime car il ne sert a rien.
+   ============================================================ */
+
+/* retourne 1 si nom est utilise dans un quad apres la position from */
+int est_utilise_apres(int from, char *nom)
 {
-    for (int i = from+1; i < qc; i++) {
-        if (strcmp(Q[i].arg1, nom)==0) return 1;
-        if (strcmp(Q[i].arg2, nom)==0) return 1;
-        /* si réécrit avant d'être lu → pas utile */
-        if (strcmp(Q[i].res,  nom)==0) return 0;
+    int i;
+    for (i = from + 1; i < qc; i++) {
+        if (strcmp(Q[i].arg1, nom) == 0) return 1;  /* utilise en arg1 */
+        if (strcmp(Q[i].arg2, nom) == 0) return 1;  /* utilise en arg2 */
+        if (strcmp(Q[i].res,  nom) == 0) return 0;  /* recrit avant relu */
     }
-    return 0;
+    return 0;  /* jamais lu */
 }
 
-static int dead[1000];
-
-static void passe_code_mort()
+void elimination_code_mort()
 {
-    memset(dead, 0, sizeof(dead));
-    for (int i = 0; i < qc; i++) {
-        /* jamais supprimer WRITE, BR, BZ, =[] */
-        if (strcmp(Q[i].op,"WRITE")==0 || strcmp(Q[i].op,"BR")==0 ||
-            strcmp(Q[i].op,"BZ"   )==0 || strcmp(Q[i].op,"=[]")==0)
-            continue;
-        if (Q[i].res[0] && !utilise_apres(i, Q[i].res))
-            dead[i] = 1;
+    int mort[MAX_Q] = {0};
+    int i, j, cible;
+    int nouvel_index[MAX_Q];
+    int nb_vivants;
+    quad tmp[MAX_Q];
+
+    /* etape 1 : marquer les quads morts */
+    for (i = 0; i < qc; i++) {
+        /* ne jamais supprimer ces instructions */
+        if (strcmp(Q[i].op, "WRITE") == 0) continue;
+        if (strcmp(Q[i].op, "BR")    == 0) continue;
+        if (strcmp(Q[i].op, "BZ")    == 0) continue;
+        if (strcmp(Q[i].op, "=[]")   == 0) continue;
+
+        /* si le resultat n est jamais relu → quad mort */
+        if (Q[i].res[0] != '\0' && !est_utilise_apres(i, Q[i].res))
+            mort[i] = 1;
     }
-}
 
-/* ================================================================
-   COMPACTER + RENUMÉROTER les cibles de branchement
-   ================================================================ */
-static int compacter()
-{
-    int new_index[1000];
-    int j = 0;
-    for (int i = 0; i < qc; i++)
-        new_index[i] = dead[i] ? -1 : j++;
+    /* etape 2 : calculer les nouveaux indices apres suppression */
+    nb_vivants = 0;
+    for (i = 0; i < qc; i++) {
+        if (mort[i] == 0)
+            nouvel_index[i] = nb_vivants++;
+        else
+            nouvel_index[i] = -1;
+    }
 
-    /* corriger cibles BZ / BR */
-    for (int i = 0; i < qc; i++) {
-        if (!dead[i] && (strcmp(Q[i].op,"BZ")==0 || strcmp(Q[i].op,"BR")==0)) {
-            int old = atoi(Q[i].res);
-            if (old >= 0 && old < qc) {
-                int target = old;
-                while (target < qc && dead[target]) target++;
-                char buf[20];
-                sprintf(buf, "%d", (target < qc) ? new_index[target] : j);
-                strcpy(Q[i].res, buf);
-            }
+    /* etape 3 : corriger les cibles de BZ et BR */
+    for (i = 0; i < qc; i++) {
+        if (mort[i] == 0 &&
+            (strcmp(Q[i].op, "BZ") == 0 || strcmp(Q[i].op, "BR") == 0)) {
+
+            cible = atoi(Q[i].res);
+            /* avancer jusqu au premier quad vivant */
+            while (cible < qc && mort[cible] == 1) cible++;
+
+            char buf[20];
+            if (cible < qc)
+                sprintf(buf, "%d", nouvel_index[cible]);
+            else
+                sprintf(buf, "%d", nb_vivants);
+            strcpy(Q[i].res, buf);
         }
     }
 
-    quad tmp[1000];
-    int cnt = 0;
-    for (int i = 0; i < qc; i++)
-        if (!dead[i]) tmp[cnt++] = Q[i];
-    memcpy(Q, tmp, cnt * sizeof(quad));
-    return cnt;
+    /* etape 4 : copier seulement les quads vivants */
+    nb_vivants = 0;
+    for (i = 0; i < qc; i++)
+        if (mort[i] == 0)
+            tmp[nb_vivants++] = Q[i];
+
+    for (i = 0; i < nb_vivants; i++)
+        Q[i] = tmp[i];
+    qc = nb_vivants;
 }
 
-/* ================================================================
-   POINT D'ENTRÉE  — ordre selon le cours :
-   1. Propagation d'expression
-   2. Simplification algébrique
-   3. Propagation de copie
-   4. Élimination d'expressions redondantes
-   5. Élimination de code inutile
-   On répète les passes jusqu'à stabilisation (comme dans l'exemple
-   de la prof qui fait 3 étapes)
-   ================================================================ */
+/* ============================================================
+   POINT D ENTREE : OPTIMISER
+   On applique les 4 passes en boucle.
+   On s arrete quand rien ne change
+   (quads_avant.txt == quads_apres.txt).
+   ============================================================ */
 void optimiser()
 {
-    int avant = qc;
+    int total_avant = qc;
+    int iteration   = 0;
 
-    int changed = 1;
-    int iter = 0;
-    while (changed && iter < 10) {
-        int qc_avant = qc;
-        iter++;
+    printf("\n======== Optimisation du code ========\n");
+    printf("Quadruplets initiaux : %d\n", qc);
 
-        passe_propagation_expression();
-        passe_simplification_algebrique();
-        passe_propagation_copie();
-        passe_expressions_redondantes();
-        passe_code_mort();
-        qc = compacter();
+    do {
+        iteration++;
+        printf("\n  >> Iteration %d :\n", iteration);
 
-        changed = (qc != qc_avant);
-    }
+        /* ecrire l etat AVANT la passe */
+        ecrire_quads("quads_avant.txt");
 
-    printf("\n======== Optimisation du code (%d iteration(s)) ========\n", iter);
-    printf("Quadruplets avant : %d\n", avant);
+        /* PASSE 1 */
+        sauvegarder();
+        simplification_algebrique();
+        afficher_changements("Simplification algebrique");
+
+        /* PASSE 2 */
+        sauvegarder();
+        propagation_copie();
+        afficher_changements("Propagation de copie");
+
+        /* PASSE 3 */
+        sauvegarder();
+        elimination_expressions_redondantes();
+        afficher_changements("Elimination expressions redondantes");
+
+        /* PASSE 4 */
+        sauvegarder();
+        elimination_code_mort();
+        afficher_changements("Elimination code mort");
+
+        printf("  => Total : %d quadruplets\n", qc);
+
+        /* ecrire l etat APRES la passe */
+        ecrire_quads("quads_apres.txt");
+
+    /* continuer tant que quelque chose a change */
+    } while (!fichiers_identiques("quads_avant.txt", "quads_apres.txt")
+             && iteration < 20);
+
+    printf("\n======== Resultat final ========\n");
+    printf("Convergence en %d iteration(s)\n", iteration);
+    printf("Quadruplets avant : %d\n", total_avant);
     printf("Quadruplets apres : %d\n", qc);
-    printf("Quadruplets elimines : %d\n", avant - qc);
+    printf("Quadruplets elimines : %d\n", total_avant - qc);
 
     printf("\n======== Quadruplets Optimises ========\n");
     for (int i = 0; i < qc; i++)
